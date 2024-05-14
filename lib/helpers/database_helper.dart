@@ -6,7 +6,9 @@ class DatabaseHelper {
   DatabaseHelper() {
     try {
       _initializeDatabase();
-    } catch (e) {}
+    } catch (e) {
+      print('Error initializing database: $e');
+    }
   }
 
   Future<void> _initializeDatabase() async {
@@ -23,9 +25,7 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY,
         name TEXT,
         email TEXT,
-        phoneNumber TEXT,
-        distributorId INTEGER,
-        FOREIGN KEY (distributorId) REFERENCES distributors(id)
+        phoneNumber TEXT
       )
     ''');
 
@@ -37,18 +37,36 @@ class DatabaseHelper {
         contactNumber TEXT
       )
     ''');
+
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS supplier_distributor (
+        id INTEGER PRIMARY KEY,
+        supplierId INTEGER,
+        distributorId INTEGER,
+        FOREIGN KEY (supplierId) REFERENCES suppliers(id),
+        FOREIGN KEY (distributorId) REFERENCES distributors(id)
+      )
+    ''');
   }
 
-  void insertSupplier(Map<String, dynamic> supplier) {
-    _db.execute('''
-      INSERT INTO suppliers (name, email, phoneNumber, distributorId)
-      VALUES (?, ?, ?, ?)
-    ''', [
-      supplier['name'],
-      supplier['email'],
-      supplier['phoneNumber'],
-      supplier['distributorId']
-    ]);
+  Future<int> insertSupplier(Map<String, dynamic> supplier) async {
+    try {
+      _db.execute('''
+        INSERT INTO suppliers (name, email, phoneNumber)
+        VALUES (?, ?, ?)
+      ''', [
+        supplier['name'],
+        supplier['email'],
+        supplier['phoneNumber'],
+      ]);
+
+      final result = _db.select('SELECT last_insert_rowid()');
+      final insertedId = result.first.values.first as int;
+      return insertedId;
+    } catch (e) {
+      print('Error inserting supplier: $e');
+      return -1;
+    }
   }
 
   void insertDistributor(Map<String, dynamic> distributor) {
@@ -62,9 +80,23 @@ class DatabaseHelper {
     ]);
   }
 
+  void linkSupplierToDistributor(int supplierId, int distributorId) {
+    _db.execute('''
+      INSERT INTO supplier_distributor (supplierId, distributorId)
+      VALUES (?, ?)
+    ''', [supplierId, distributorId]);
+  }
+
+  void unlinkSupplierFromDistributor(int supplierId, int distributorId) {
+    _db.execute('''
+      DELETE FROM supplier_distributor 
+      WHERE supplierId = ? AND distributorId = ?
+    ''', [supplierId, distributorId]);
+  }
+
   Future<List<Map<String, dynamic>>> getSuppliers() async {
     final List<Map<String, dynamic>> suppliers = [];
-    final results = _db.select('SELECT * FROM suppliers');
+    final results = await _db.select('SELECT * FROM suppliers');
     for (final result in results) {
       suppliers.add(result);
     }
@@ -85,9 +117,10 @@ class DatabaseHelper {
     final List<Map<String, dynamic>> distributors = [];
     final results = _db.select(
       '''
-      SELECT * FROM distributors WHERE id IN (
-        SELECT distributorId FROM suppliers WHERE id = ?
-      )
+      SELECT d.*
+      FROM distributors d
+      INNER JOIN supplier_distributor sd ON d.id = sd.distributorId
+      WHERE sd.supplierId = ?
       ''',
       [supplierId],
     );

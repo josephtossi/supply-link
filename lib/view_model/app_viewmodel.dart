@@ -20,8 +20,8 @@ class AppViewModel extends ChangeNotifier {
     this.distributors = distributors;
   }
 
-  void insertSupplier(Map<String, dynamic> supplier) {
-    _databaseHelper.insertSupplier(supplier);
+  Future<int> insertSupplier(Map<String, dynamic> supplier) async {
+    return await _databaseHelper.insertSupplier(supplier);
   }
 
   void insertDistributor(Map<String, dynamic> distributor) {
@@ -39,6 +39,14 @@ class AppViewModel extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> getDistributorsForSupplier(
       {required int supplierId}) async {
     return await _databaseHelper.getDistributorsForSupplier(supplierId);
+  }
+
+  void linkSupplierToDistributor(int supplierId, int distributorId) {
+    _databaseHelper.linkSupplierToDistributor(supplierId, distributorId);
+  }
+
+  void unlinkSupplierFromDistributor(int supplierId, int distributorId) {
+    _databaseHelper.unlinkSupplierFromDistributor(supplierId, distributorId);
   }
 
   @override

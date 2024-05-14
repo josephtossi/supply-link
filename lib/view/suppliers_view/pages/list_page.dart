@@ -68,9 +68,13 @@ class _ListPageState extends ConsumerState<ListPage> {
     final appViewModel = ref.read(appStateProvider);
     initSuppliersAndDistributors(appViewModel);
 
-    for (Map<String, dynamic> supplier in SupplyService.suppliers) {
-      appViewModel.insertSupplier(supplier);
-    }
+    await Future.forEach(SupplyService.suppliers,
+        (Map<String, dynamic> supplier) async {
+      int supplierId = await appViewModel.insertSupplier(supplier);
+      for (int distributorId in supplier['distributorIds']) {
+        appViewModel.linkSupplierToDistributor(supplierId, distributorId);
+      }
+    });
 
     for (Map<String, dynamic> distributor in SupplyService.distributors) {
       appViewModel.insertDistributor(distributor);
