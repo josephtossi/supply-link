@@ -36,6 +36,11 @@ class AppViewModel extends ChangeNotifier {
     return await _databaseHelper.getDistributors();
   }
 
+  Future<List<Map<String, dynamic>>> getDistributorsForSupplier(
+      {required int supplierId}) async {
+    return await _databaseHelper.getDistributorsForSupplier(supplierId);
+  }
+
   @override
   void dispose() {
     _databaseHelper.close();

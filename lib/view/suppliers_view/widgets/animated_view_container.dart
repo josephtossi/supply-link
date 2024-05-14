@@ -62,9 +62,10 @@ class _AnimatedViewContainerState extends State<AnimatedViewContainer>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('${viewElement['name']}', style: Constant.headline1),
-                      Text('${viewElement['location']}',
+                      Text('${viewElement['location'] ?? viewElement['email']}',
                           style: Constant.headline2),
-                      Text('${viewElement['contactNumber']}',
+                      Text(
+                          '${viewElement['contactNumber'] ?? viewElement['phoneNumber']}',
                           style: Constant.headline3),
                     ],
                   ),
