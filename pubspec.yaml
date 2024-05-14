@@ -25,7 +25,8 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   sqlite3: ^2.1.0
-  #Riverpod
+  sqlite3_flutter_libs:
+  path_provider:
   flutter_riverpod: ^2.3.6
 
 dev_dependencies:

@@ -2,7 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supply_link/model/distributor_model.dart';
+import 'package:supply_link/model/supplier_model.dart';
+import 'package:supply_link/services/supply_service.dart';
 import 'package:supply_link/theme/constants.dart';
+import 'package:supply_link/view/suppliers_view/widgets/animated_view_container.dart';
+import 'package:supply_link/view_model/app_viewmodel.dart';
 import 'package:supply_link/view_model/provider/app_provider.dart';
 
 class SuppliersPage extends ConsumerStatefulWidget {
@@ -16,32 +21,6 @@ class SuppliersPage extends ConsumerStatefulWidget {
 
 class _SuppliersPageState extends ConsumerState<SuppliersPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
-  List<Map<String, dynamic>> suppliers = [
-    {
-      'name': 'Supplier 1',
-      'email': 'supplier1@email.com',
-      'phoneNumber': '1234567890',
-      'distributorId': 1,
-    },
-    {
-      'name': 'Supplier 2',
-      'email': 'supplier2@email.com',
-      'phoneNumber': '0987654321',
-      'distributorId': 2,
-    }
-  ];
-  List<Map<String, dynamic>> distributors = [
-    {
-      'name': 'Distributor 1',
-      'location': 'Location 1',
-      'contactNumber': '111222333',
-    },
-    {
-      'name': 'Distributor 2',
-      'location': 'Location 2',
-      'contactNumber': '444555666',
-    }
-  ];
 
   @override
   void initState() {
@@ -51,14 +30,46 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
     });
   }
 
+  initSuppliersAndDistributors(AppViewModel appViewModel) {
+    // set the supplier list
+    appViewModel.setSuppliersList(SupplyService.suppliers.map((data) {
+      return Supplier(
+        id: '${SupplyService.suppliers.indexOf(data)}',
+        name: data['name'],
+        email: data['email'],
+        phoneNumber: data['phoneNumber'],
+        distributor: Distributor(
+          id: data['distributorId'].toString(),
+          name: '',
+          location: '',
+          contactNumber: '',
+          suppliers: [],
+        ),
+      );
+    }).toList());
+    // set the distributors list
+    appViewModel.setDistributorList(SupplyService.distributors.map((data) {
+      return Distributor(
+        id: '${SupplyService.distributors.indexOf(data)}',
+        name: data['name'],
+        location: data['location'],
+        contactNumber: data['contactNumber'],
+        suppliers: [],
+      );
+    }).toList());
+  }
+
   void _initData() async {
     final appViewModel = ref.read(appStateProvider);
-    suppliers.map((supplier) {
+    initSuppliersAndDistributors(appViewModel);
+
+    for (Map<String, dynamic> supplier in SupplyService.suppliers) {
       appViewModel.insertSupplier(supplier);
-    });
-    distributors.map((distributor) {
+    }
+
+    for (Map<String, dynamic> distributor in SupplyService.distributors) {
       appViewModel.insertDistributor(distributor);
-    });
+    }
   }
 
   @override
@@ -68,50 +79,44 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
     return WillPopScope(
       onWillPop: () async {
         return false;
       },
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-            key: _scaffoldKey,
-            backgroundColor: Colors.transparent,
-            body: SafeArea(
-              child: Container(
-                decoration:
-                    BoxDecoration(gradient: Constant.whiteLinearGradient),
-                child: Center(
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: ref.read(appStateProvider).getDistributors(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      } else if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      } else {
-                        final distributors = snapshot.data!;
-                        return ListView.builder(
-                          itemCount: distributors.length,
-                          itemBuilder: (context, index) {
-                            final distributor = distributors[index];
-                            return ListTile(
-                              title: Text(distributor['name']),
-                              subtitle: Text(distributor['location']),
-                              // You can customize the ListTile as per your requirement
-                            );
-                          },
-                        );
-                      }
-                    },
-                  ),
+      child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Container(
+              decoration: BoxDecoration(gradient: Constant.whiteLinearGradient),
+              child: Center(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: ref.read(appStateProvider).getDistributors(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text(
+                        'Error: ${snapshot.error}',
+                        style: Constant.headline1,
+                      );
+                    } else {
+                      final distributors = snapshot.data!;
+                      return ListView.builder(
+                        itemCount: distributors.length,
+                        itemBuilder: (context, index) {
+                          final distributor = distributors[index];
+                          return AnimatedViewContainer(
+                              viewElement: distributor);
+                        },
+                      );
+                    }
+                  },
                 ),
               ),
-            )),
-      ),
+            ),
+          )),
     );
   }
 }

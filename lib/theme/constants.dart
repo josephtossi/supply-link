@@ -7,17 +7,17 @@ class Constant {
   static Color whiteColor = const Color(0xffC0CDFE);
 
   static TextStyle headline1 = TextStyle(
-    fontSize: 30.0,
+    fontSize: 15.0,
     color: whiteColor,
     fontWeight: FontWeight.w400,
   );
   static TextStyle headline2 = TextStyle(
-    fontSize: 25.0,
+    fontSize: 12.0,
     color: whiteColor,
     fontWeight: FontWeight.w400,
   );
   static TextStyle headline3 = TextStyle(
-    fontSize: 20.0,
+    fontSize: 15.0,
     color: whiteColor,
     fontWeight: FontWeight.w400,
   );

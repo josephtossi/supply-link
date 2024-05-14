@@ -1,11 +1,20 @@
 import 'package:sqlite3/sqlite3.dart';
 
 class DatabaseHelper {
-  late Database _db;
+  final Database _db = sqlite3.openInMemory();
 
   DatabaseHelper() {
-    _db = sqlite3.open('supply_link.db');
-    _createTables();
+    try {
+      _initializeDatabase();
+    } catch (e) {}
+  }
+
+  Future<void> _initializeDatabase() async {
+    try {
+      _createTables();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   void _createTables() {
@@ -65,6 +74,23 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getDistributors() async {
     final List<Map<String, dynamic>> distributors = [];
     final results = _db.select('SELECT * FROM distributors');
+    for (final result in results) {
+      distributors.add(result);
+    }
+    return distributors;
+  }
+
+  Future<List<Map<String, dynamic>>> getDistributorsForSupplier(
+      int supplierId) async {
+    final List<Map<String, dynamic>> distributors = [];
+    final results = _db.select(
+      '''
+      SELECT * FROM distributors WHERE id IN (
+        SELECT distributorId FROM suppliers WHERE id = ?
+      )
+      ''',
+      [supplierId],
+    );
     for (final result in results) {
       distributors.add(result);
     }
